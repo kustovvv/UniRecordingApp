@@ -1,0 +1,54 @@
+name: RecordingApp CI
+
+on: [push, pull_request]
+
+jobs:
+  build_project:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flask google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
+      - name: Set up Google Drive credentials
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > keys/recordings-405714-8990ac058030.json
+          export GOOGLE_APPLICATION_CREDENTIALS=keys/recordings-405714-8990ac058030.json
+
+      - name: Run Google Drive service operation
+        run: |
+          python Google.py
+
+      - name: Run Flask tests
+        run: |
+          pytest
+
+      - name: Set up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install JavaScript and CocoaPods dependencies
+        run: |
+          npm install
+          cd ios && pod install
+
+      - name: Build and Test iOS app
+        run: |
+          xcodebuild \
+            -workspace RecordingApp.xcworkspace \
+            -scheme RecordingAppScheme \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 14,OS=16.1' \
+            build test

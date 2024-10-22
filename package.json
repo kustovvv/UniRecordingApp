@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-native-audio-recorder-player": "^3.6.6",
+    "react-native-audio-toolkit": "^1.0.6"
+  }
+}

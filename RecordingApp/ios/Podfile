@@ -1,0 +1,52 @@
+# Define a function from react-native to configure the pod settings dynamically
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+# Define the minimum iOS version for the project
+platform :ios, '14.0'  # Change '11.0' to the minimum version you support
+
+# Prepare the project for the React Native dependencies
+prepare_react_native_project!
+
+# Configure Flipper unless it is disabled by the NO_FLIPPER environment variable
+flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
+
+# Check if frameworks should be linked dynamically or statically based on USE_FRAMEWORKS environment variable
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+end
+
+# Define the main target along with its configuration
+target 'RecordingApp' do
+  # Use auto-linking for native modules
+  config = use_native_modules!
+
+  # Use React Native pods
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # Flipper is enabled or disabled based on the earlier configuration
+    :flipper_configuration => flipper_config,
+    # Set the path to the application root
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  # You can add any specific pods here if they are not auto-linked properly
+  # Example for adding RNAudioRecorderPlayer explicitly if auto-linking fails
+  pod 'RNAudioRecorderPlayer', :path => '../node_modules/react-native-audio-recorder-player'
+
+  # Define settings for the test target
+  target 'RecordingAppTests' do
+    inherit! :complete
+    # Pods for testing can be added here
+  end
+
+  # This post-install script is used to configure settings after installing the pods
+  post_install do |installer|
+    react_native_post_install(installer, config[:reactNativePath], :mac_catalyst_enabled => false)
+  end
+end

@@ -1,0 +1,13 @@
+body {
+    text-align: center;
+    padding: 50px;
+    font-family: "Arial", sans-serif;
+}
+.message {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    display: inline-block;
+}
